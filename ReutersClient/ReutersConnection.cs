@@ -10,15 +10,17 @@ namespace ReutersClient
         private readonly ReutersConnectionSettings _options;
         private Action<MarketDataItem> ?_callback;
         private CancellationTokenSource _cancellationTokenSource;
-        private SubscriberSocket? _client;
+        private SubscriberSocket? _subClient;
+        private PublisherSocket? _pubClient;
 
         public ReutersConnection(ReutersConnectionSettings options)
         {
             _options = options;
             _callback = options.Callback;
             _cancellationTokenSource = options.CancellationTokenSource;
-            _client = new SubscriberSocket(options.ConnectionString);
-            _client.Subscribe(options.Topic); 
+            _subClient = new SubscriberSocket(options.SubConnectionString);
+            _pubClient = new PublisherSocket(options.PubConnectionString);
+            _subClient.Subscribe(options.SubTopic); 
         }
         public void Connect()
         {
@@ -27,12 +29,11 @@ namespace ReutersClient
 
         private async Task ServerListen()
         {
-
             try
             {
                 while (true)
                 {
-                    string? message = _client?.ReceiveFrameString();
+                    string? message = _subClient?.ReceiveFrameString();
                     message = message.Split('?')[1].Trim();
                     var mdItem =  JsonSerializer.Deserialize<Dictionary<string, object>>(message);
                     if (_cancellationTokenSource != null && _cancellationTokenSource.IsCancellationRequested)
@@ -62,6 +63,7 @@ namespace ReutersClient
 
         public bool Subscribe(string symbol, ServiceName serviceName = ServiceName.IDN_SELECTFEED)
         {
+            _pubClient?.SendFrame($"{_options.PubTopic} {ServiceName.IDN_SELECTFEED.ToString()}:{symbol}");
             return true;
         }
 
@@ -71,10 +73,10 @@ namespace ReutersClient
         }
         public void Dispose()
         {
-            if (!_client.IsDisposed)
+            if (!_subClient.IsDisposed)
             {
-                _client?.Disconnect(_options.ConnectionString);
-                _client.Dispose();
+                _subClient?.Disconnect(_options.SubConnectionString);
+                _subClient.Dispose();
             }
         }
 

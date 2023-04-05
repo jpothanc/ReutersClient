@@ -5,8 +5,10 @@ CancellationTokenSource cts = new CancellationTokenSource();
 IReutersClient client =  ReutersClientFactory.Create(x =>
 {
 
-    x.ConnectionString = "tcp://localhost:5557";
-    x.Topic = "marketdata";
+    x.SubConnectionString = "tcp://localhost:5557";
+    x.SubTopic = "pubmdinfo";
+    x.PubConnectionString = "tcp://localhost:5559";
+    x.PubTopic = "subsymbols";
     x.OnUpdate(md =>
     {
         Console.WriteLine($"Update Received");
@@ -18,7 +20,9 @@ IReutersClient client =  ReutersClientFactory.Create(x =>
     x.CancellationTokenSource = cts;
 
 });
-//Task.Delay(5000).Wait();
+Task.Delay(5000).Wait();
+client.Subscribe("6758.T");
+
 //cts.Cancel();
 Console.ReadLine();
 
