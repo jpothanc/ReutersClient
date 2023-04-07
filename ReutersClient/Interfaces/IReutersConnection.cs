@@ -1,4 +1,6 @@
-﻿namespace ReutersClient
+﻿using ReutersCore;
+
+namespace ReutersClient
 {
     internal interface IReutersConnection
     {

@@ -13,10 +13,9 @@ namespace ReutersClient.Filters
         {
             IFilter filter1 = new Formatter();
             IFilter filter2 = new Converter();
+
             filter1.Next = filter2;
-
             return filter1;
-
         }
     }
 }

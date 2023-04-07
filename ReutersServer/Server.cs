@@ -1,5 +1,6 @@
 ﻿using NetMQ;
 using NetMQ.Sockets;
+using ReutersCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -39,13 +40,21 @@ namespace ReutersServer
                 string topic = _settings.PubTopic;
                 for (int i = 0; i < 10000000; i++)
                 {
+
                     var item = MarketDataItem.NewItem(i);
                     var json = JsonSerializer.Serialize(item);
+                    Console.WriteLine(json);
 
-                    var msg = $"{topic} {json}";
-                    Console.WriteLine(msg);
-                    server.SendFrame(msg);
-
+                    if (_settings.SerializationType == SerializationType.Json)
+                    {
+                        server.SendFrame(json);
+                    }
+                    else if (_settings.SerializationType == SerializationType.Protobuf)
+                    {
+                        var proto = Helper.ProtoSerialize(item);
+                        server.SendFrame(proto);
+                    }
+                   // var msg = $"{topic} {json}";
                     Thread.Sleep(1000);
                 }
             }

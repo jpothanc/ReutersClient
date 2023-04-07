@@ -8,7 +8,7 @@ namespace ReutersClient
 {
     internal class BlockingCache<T>
     {
-        private readonly Func<T, Task> _handler;
+        private readonly Func<T, Task>? _handler;
         private BlockingCollection<T> _collection;
         public BlockingCache(int bucketSize, Func<T, Task> handler)
         {
@@ -28,7 +28,7 @@ namespace ReutersClient
                 try
                 {
                     var data = _collection.Take();
-                    _handler(data);
+                    _handler?.Invoke(data);
                 }
                 catch (Exception ex)
                 {

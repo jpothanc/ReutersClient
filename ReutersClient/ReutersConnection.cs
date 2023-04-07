@@ -1,6 +1,6 @@
 ﻿using NetMQ;
 using NetMQ.Sockets;
-using System.Text.Json;
+using ReutersCore;
 
 namespace ReutersClient
 {
@@ -12,6 +12,7 @@ namespace ReutersClient
         private CancellationTokenSource _cancellationTokenSource;
         private SubscriberSocket? _subClient;
         private PublisherSocket? _pubClient;
+        private ISerializer _serializer;
 
         public ReutersConnection(ReutersConnectionSettings options)
         {
@@ -20,33 +21,38 @@ namespace ReutersClient
             _cancellationTokenSource = options.CancellationTokenSource;
             _subClient = new SubscriberSocket(options.SubConnectionString);
             _pubClient = new PublisherSocket(options.PubConnectionString);
-            _subClient.Subscribe(options.SubTopic); 
+            _subClient.Subscribe(options.SubTopic);
+            _serializer = SerializationFactory.Create(_options.SerializationType);
         }
         public void Connect()
         {
-            Task.Run(() => ServerListen());
+            Task.Run(() => DoListen());
         }
 
-        private async Task ServerListen()
+        private async Task DoListen()
         {
             try
             {
                 while (true)
                 {
-                    string? message = _subClient?.ReceiveFrameString();
-                    message = message.Split('?')[1].Trim();
-                    var mdItem =  JsonSerializer.Deserialize<Dictionary<string, object>>(message);
+                    var message = _subClient?.ReceiveFrameBytes();
+
+                    if (message == null)
+                        continue;
+                    
+                    var mdItem = _serializer.Deserialize<MarketDataItem>(message);
+
                     if (_cancellationTokenSource != null && _cancellationTokenSource.IsCancellationRequested)
                     {
                         Console.WriteLine("Cancel Requested");
                         break;
                     }
-                    OnPriceUpdate(new MarketDataItem() { Item = mdItem});
+                    
+                    OnPriceUpdate(mdItem);
                 }
             }
             catch (Exception e)
             {
-
                 Console.WriteLine(e.Message);
             }
         }
@@ -73,10 +79,10 @@ namespace ReutersClient
         }
         public void Dispose()
         {
-            if (!_subClient.IsDisposed)
+            if (_subClient != null && !_subClient.IsDisposed)
             {
                 _subClient?.Disconnect(_options.SubConnectionString);
-                _subClient.Dispose();
+                _subClient?.Dispose();
             }
         }
 

@@ -6,18 +6,23 @@ IReutersClient client =  ReutersClientFactory.Create(x =>
 {
 
     x.SubConnectionString = "tcp://localhost:5557";
-    x.SubTopic = "pubmdinfo";
+    x.SubTopic = "";
     x.PubConnectionString = "tcp://localhost:5559";
     x.PubTopic = "subsymbols";
     x.OnUpdate(md =>
     {
         Console.WriteLine($"Update Received");
-        foreach (var key in md.Item.Keys)
-        {
-            Console.WriteLine($"{key}-{md.Item[key]}");
-        }
+        
+        Console.WriteLine($"{md}");
+
+        //foreach (var key in md.Item.Keys)
+        //{
+        //    Console.WriteLine($"{key}-{md.Item[key]}");
+        //}
     });
     x.CancellationTokenSource = cts;
+    //x.WithProtobuf();
+    x.WithJson();
 
 });
 Task.Delay(5000).Wait();

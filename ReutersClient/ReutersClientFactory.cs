@@ -8,7 +8,6 @@
             ReutersConnectionSettings reutersConnectionSettings = new ReutersConnectionSettings();
             settings(reutersConnectionSettings);
             return new ReutersClient(reutersConnectionSettings);
-
         }
     }
 }
